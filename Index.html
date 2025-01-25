@@ -1,199 +1,210 @@
-<!DOCTYPE html>
+        <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alphabet Number Converter</title>
+    <title>Alphabet Number Practice</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 2rem;
-            background-color: #f0f2f5;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        .settings-panel {
+            text-align: center;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            max-width: 500px;
         }
 
         .container {
-            display: grid;
+            display: none;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            max-width: 800px;
-            margin: 0 auto;
+            gap: 20px;
+            max-width: 1000px;
+            margin: 20px auto;
         }
 
         .converter-box {
             background: white;
-            padding: 2rem;
+            padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        .question-box {
-            margin: 1.5rem 0;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 2rem;
-        }
-
-        h3 {
-            font-size: 2.5rem;
-            margin: 0.5rem 0;
-            color: #333;
-        }
-
-        input {
-            padding: 0.5rem;
-            margin: 0.5rem;
-            border: 2px solid #ddd;
-            border-radius: 4px;
-            font-size: 1rem;
-            width: 100px;
-            text-align: center;
+        .question-counter {
+            margin: 10px 0;
+            font-weight: bold;
         }
 
         button {
-            padding: 0.5rem 1.5rem;
+            padding: 10px 20px;
+            margin: 5px;
             background: #007bff;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.3s;
         }
 
-        button:hover {
-            background: #0056b3;
-        }
-
-        .score {
-            color: #666;
-            font-weight: bold;
-        }
-
-        .feedback {
-            margin-top: 1rem;
-            font-weight: bold;
-        }
-
-        .correct {
-            color: #28a745;
-        }
-
-        .incorrect {
-            color: #dc3545;
+        input {
+            padding: 10px;
+            margin: 10px 0;
+            width: 100px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <h1>Alphabet ↔ Number Converter</h1>
-    <div class="container">
+    <div class="settings-panel" id="settingsPanel">
+        <h2>Select Number of Questions:</h2>
+        <button onclick="startPractice(20)">20</button>
+        <button onclick="startPractice(40)">40</button>
+        <button onclick="startPractice(60)">60</button>
+        <button onclick="startPractice(100)">100</button>
+    </div>
+
+    <div class="container" id="mainContainer">
         <!-- Alphabet to Number Section -->
         <div class="converter-box">
-            <h2>Alphabet to Number</h2>
-            <p class="score" id="a2n-score">Score: 0</p>
+            <h3>Alphabet to Number</h3>
             <div class="question-box">
                 <p>What is the numerical value of:</p>
-                <h3 id="current-letter">A</h3>
+                <h2 id="currentLetter">A</h2>
             </div>
-            <form onsubmit="handleA2NSubmit(event)">
-                <input type="number" id="a2n-input" min="1" max="26" required>
+            <form onsubmit="handleA2N(event)">
+                <input type="number" id="a2nInput" required>
                 <button type="submit">Check</button>
             </form>
-            <p class="feedback" id="a2n-feedback"></p>
+            <p id="a2nFeedback"></p>
         </div>
 
         <!-- Number to Alphabet Section -->
         <div class="converter-box">
-            <h2>Number to Alphabet</h2>
-            <p class="score" id="n2a-score">Score: 0</p>
+            <h3>Number to Alphabet</h3>
             <div class="question-box">
                 <p>What is the alphabetical value of:</p>
-                <h3 id="current-number">1</h3>
+                <h2 id="currentNumber">1</h2>
             </div>
-            <form onsubmit="handleN2ASubmit(event)">
-                <input type="text" id="n2a-input" maxlength="1" required>
+            <form onsubmit="handleN2A(event)">
+                <input type="text" id="n2aInput" maxlength="1" required>
                 <button type="submit">Check</button>
             </form>
-            <p class="feedback" id="n2a-feedback"></p>
+            <p id="n2aFeedback"></p>
         </div>
     </div>
 
     <script>
-        // Alphabet to Number Logic
-        let a2nScore = 0;
-        let currentLetter = generateRandomLetter();
-        
+        let practiceState = {
+            totalQuestions: 0,
+            answered: 0,
+            wrongAnswers: {
+                a2n: new Set(),
+                n2a: new Set()
+            },
+            currentLetter: 'A',
+            currentNumber: 1
+        };
+
+        function startPractice(total) {
+            practiceState = {
+                totalQuestions: total,
+                answered: 0,
+                wrongAnswers: {
+                    a2n: new Set(),
+                    n2a: new Set()
+                },
+                currentLetter: generateRandomLetter(),
+                currentNumber: generateRandomNumber()
+            };
+
+            // Update UI
+            document.getElementById('settingsPanel').style.display = 'none';
+            document.getElementById('mainContainer').style.display = 'grid';
+            updateQuestionDisplays();
+        }
+
         function generateRandomLetter() {
-            const randomCharCode = Math.floor(Math.random() * 26) + 65;
-            return String.fromCharCode(randomCharCode);
+            return String.fromCharCode(65 + Math.floor(Math.random() * 26));
         }
 
-        function handleA2NSubmit(e) {
-            e.preventDefault();
-            const userInput = parseInt(document.getElementById('a2n-input').value);
-            const correctNumber = currentLetter.charCodeAt(0) - 64;
-            const feedbackElement = document.getElementById('a2n-feedback');
-
-            if (userInput === correctNumber) {
-                a2nScore++;
-                feedbackElement.textContent = 'Correct! Well done!';
-                feedbackElement.className = 'feedback correct';
-            } else {
-                feedbackElement.textContent = `Incorrect. Correct answer: ${correctNumber}`;
-                feedbackElement.className = 'feedback incorrect';
-            }
-
-            document.getElementById('a2n-score').textContent = `Score: ${a2nScore}`;
-            setTimeout(() => {
-                currentLetter = generateRandomLetter();
-                document.getElementById('current-letter').textContent = currentLetter;
-                document.getElementById('a2n-input').value = '';
-                feedbackElement.textContent = '';
-            }, 1500);
-        }
-
-        // Number to Alphabet Logic
-        let n2aScore = 0;
-        let currentNumber = generateRandomNumber();
-        
         function generateRandomNumber() {
-            return Math.floor(Math.random() * 26) + 1;
+            return 1 + Math.floor(Math.random() * 26);
         }
 
-        function handleN2ASubmit(e) {
-            e.preventDefault();
-            const userInput = document.getElementById('n2a-input').value.toUpperCase();
-            const correctLetter = String.fromCharCode(64 + currentNumber);
-            const feedbackElement = document.getElementById('n2a-feedback');
+        function updateQuestionDisplays() {
+            document.getElementById('currentLetter').textContent = practiceState.currentLetter;
+            document.getElementById('currentNumber').textContent = practiceState.currentNumber;
+        }
 
-            if (userInput === correctLetter) {
-                n2aScore++;
-                feedbackElement.textContent = 'Correct! Well done!';
-                feedbackElement.className = 'feedback correct';
+        function handleA2N(event) {
+            event.preventDefault();
+            const input = document.getElementById('a2nInput');
+            const feedback = document.getElementById('a2nFeedback');
+            const correct = practiceState.currentLetter.charCodeAt(0) - 64;
+            const userAnswer = parseInt(input.value);
+
+            if (userAnswer === correct) {
+                feedback.textContent = "Correct!";
+                feedback.style.color = 'green';
             } else {
-                feedbackElement.textContent = `Incorrect. Correct answer: ${correctLetter}`;
-                feedbackElement.className = 'feedback incorrect';
+                feedback.textContent = `Wrong! Correct answer: ${correct}`;
+                feedback.style.color = 'red';
+                practiceState.wrongAnswers.a2n.add(practiceState.currentLetter);
             }
 
-            document.getElementById('n2a-score').textContent = `Score: ${n2aScore}`;
-            setTimeout(() => {
-                currentNumber = generateRandomNumber();
-                document.getElementById('current-number').textContent = currentNumber;
-                document.getElementById('n2a-input').value = '';
-                feedbackElement.textContent = '';
-            }, 1500);
+            nextQuestion();
         }
 
-        // Input validation
-        document.getElementById('n2a-input').addEventListener('input', function(e) {
-            this.value = this.value.replace(/[^A-Za-z]/g, '');
-        });
+        function handleN2A(event) {
+            event.preventDefault();
+            const input = document.getElementById('n2aInput');
+            const feedback = document.getElementById('n2aFeedback');
+            const correct = String.fromCharCode(64 + practiceState.currentNumber);
+            const userAnswer = input.value.toUpperCase();
+
+            if (userAnswer === correct) {
+                feedback.textContent = "Correct!";
+                feedback.style.color = 'green';
+            } else {
+                feedback.textContent = `Wrong! Correct answer: ${correct}`;
+                feedback.style.color = 'red';
+                practiceState.wrongAnswers.n2a.add(practiceState.currentNumber);
+            }
+
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            practiceState.answered++;
+            
+            if (practiceState.answered >= practiceState.totalQuestions) {
+                endPractice();
+                return;
+            }
+
+            // Generate new questions
+            practiceState.currentLetter = generateRandomLetter();
+            practiceState.currentNumber = generateRandomNumber();
+            
+            // Clear inputs
+            document.getElementById('a2nInput').value = '';
+            document.getElementById('n2aInput').value = '';
+            
+            updateQuestionDisplays();
+        }
+
+        function endPractice() {
+            alert(`Practice completed!\nWrong answers: ${
+                practiceState.wrongAnswers.a2n.size + practiceState.wrongAnswers.n2a.size
+            }`);
+            document.getElementById('settingsPanel').style.display = 'block';
+            document.getElementById('mainContainer').style.display = 'none';
+        }
     </script>
 </body>
 </html>
